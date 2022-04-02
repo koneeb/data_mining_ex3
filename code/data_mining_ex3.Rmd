@@ -1,0 +1,31 @@
+---
+title: "ECO395M: Exercise 3"
+author: "Kashaf Oneeb"
+date: "4/1/2022"
+output: md_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem 1
+
+## 1. Why can’t I just get data from a few different cities and run the regression of “Crime” on “Police” to understand how more cops in the streets affect crime? (“Crime” refers to some measure of crime rate and “Police” measures the number of cops in a city.)
+
+Firstly, grouping data from different cities makes the incorrect assumption that the data points are independently and identically distributed among cities. Crime rates and police measures vary among cities, and factors that influence these two variables, such as, police budgets, population, income levels, criminal punishments, etc. also vary amongst cities. As a result, combining data from different cities could distort the outcome of the regression. Secondly, while police measures affect crime rates, crime rates also affect the level of police measures, leading to a simultaneous causality bias. Thirdly, there is a lack of control variables in the regression as crime rates can be influenced by several other variables as mentioned above; this could lead to incorrect estimation of the effect of "Police" on "Crime".
+
+## How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers' paper.
+
+The researchers from UPenn narrowed down their research to only one city, Washington, D.C., assuming that the data points would be identically distributed within a city. To deal with the simultaneous causality bias, they chose Washington, D.C. because it is more likely to be a terrorism target compared to other cities in the U.S. This allowed the researchers to utilize the "High Alert" variable as the instrument variable to address simultaneity. In other words, when there is High Alert (High Alert = 1), extra police is deployed in the city to protect against terrorists; in this setup the deployment of the extra police is not directly related to the variable of interest, "Crime". So, the High Alert variable is able to capture the effect of police measures on crime rates without crime rates affecting police measures. They also added the log of midday ridership on the Metro as a control variable to test whether there were fewer victims out in the city becuase of the High Alert.
+
+Table 2 summarizes their results as two regressions. The first regression only utilizes the High Alert dummy variable to estimate the effect of police on the daily total number of crimes in D.C. This leads to -7.316 as the coefficient on High Alert which is significant at the 5% level. It means that on a High Alert day, the daily total number of crimes in D.C by 7.316 units, holding all else constant. The R-squared for this regression is 0.14, which means only 14% of the variation in crime rates in D.C. is described by the covariate in the model.
+
+The second regression adds the log of midday ridership to the first regression as a control variable. This leads to -6.046 as the coefficient on High Alert at the 5% significance level, meaning that on a High Alert day, the daily total number of crimes in D.C falls by 6.046 units, holding all else constant. The coefficient on "Log(midday ridership)" is 17.341 which is significant at the 1% level. This means if midday ridership on the Metro increases by 1 percent, the daily total number of crimes in D.C increase by 0.173 units, holding all else constant. The R-sqaured of this regression, 0.17, is slightly higher than that of the first regression. It means only 17% of the varation in crime rates in D.C. is described by the covariates in the model. Given that, since both of the coefficients in this regression are statistically significant at the 5% and 1% level, respectively, the second regression performs better than the first regression, although by only a small margin. 
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+library(here)
+
+here::i_am("code/data_mining_ex3.Rmd")
+
