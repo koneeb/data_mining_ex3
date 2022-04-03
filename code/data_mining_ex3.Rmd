@@ -34,8 +34,171 @@ The coefficient on "High Alert x District 1" shows that on a High Alert day in D
 
 Given the statisical significance of the coefficients, it can be concluded that having a High Alert day in District 1 reduces the daily total number of crimes in D.C. by 13.679 units, holding all else constant. However, a comparison between District 1 and Other Districts cannot be made due the lack of significance of the "High Alert x Other Districts" coefficient.
 
+# Problem 2
+
+## CART model: Regression Tree
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 library(here)
+library(tidyverse)
+library(rsample)
+library(modelr)
+library(rpart)
+library(rpart.plot)
 
 here::i_am("code/data_mining_ex3.Rmd")
 
+# read in the data
+dengue <- read.csv(here("data/dengue.csv"))
+
+# exclude missing values
+dengue <- na.exclude(dengue)
+
+# convert chr type to factor type
+dengue <- as.data.frame(unclass(dengue),              
+                       stringsAsFactors = TRUE)
+
+# split the data into training and test sets
+dengue_split = initial_split(dengue, prop = 0.8)
+dengue_train = training(dengue_split)
+dengue_test = testing(dengue_split)
+
+# CART model: Regression Tree
+
+# fit the rpart model on the training set
+rpart_fit <- rpart(total_cases ~ city + season + specific_humidity + tdtr_k + precipitation_amt, 
+  data = dengue_train,
+  control=rpart.control(cp=.0001, minsplit=20))
+
+# plot the regression tree
+rpart.plot(rpart_fit, digits=-5, type=4, extra=1)
+```
+
+
+### Pruned regression tree at the 1 standard error complexity level
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+# function to prune a tree at the 1se level
+prune_1se = function(my_tree) {
+  out = as.data.frame(my_tree$cptable)
+  thresh = min(out$xerror + out$xstd)
+  cp_opt = max(out$CP[out$xerror <= thresh])
+  prune(my_tree, cp=cp_opt)
+}
+
+# prune rpart_fit at the 1se complexity level
+rpart_fit_prune = prune_1se(rpart_fit)
+
+# plot the pruned tree
+rpart.plot(rpart_fit_prune, digits=-5, type=4, extra=1)
+```
+
+### RMSE of predicting the regression tree on the test set
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+
+rmse(rpart_fit_prune, dengue_test)
+
+```
+
+## Random Forests
+
+###  RMSE of predicting randam forest on the test set
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+
+library(randomForest)
+
+# fit a random forest model on the train set
+random_forest_fit = randomForest(total_cases ~ city + season + specific_humidity + tdtr_k + precipitation_amt,
+                           data=dengue_train, importance = TRUE)
+
+rmse(random_forest_fit, dengue_test)
+
+```
+
+## Gradient-Boosted Trees
+
+### Gaussian distribution
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+library(gbm)
+library(caret)
+
+# build boosted regression trees with gaussian distribution and 10-fold cv
+boost1 <- gbm(total_cases ~ city + season + specific_humidity + tdtr_k + precipitation_amt, 
+               data = dengue_train,
+               distribution = "gaussian",
+               cv.folds = 10,
+               interaction.depth=4, n.trees=500, shrinkage=.05)
+
+# plot loss function as a result of n trees added to the ensemble
+gbm.perf(boost1, method = "cv")
+
+
+
+
+```
+
+The figure above displays a loss function as a result of n trees added to the ensemble for the chosen gradient boosted machine (gbm) model . The model assumes gaussian distibution with 500 trees. The squared error loss is shown on the y-axis and numbers of trees is on the x-axis. It can be seen that the cross-validated errors represented by the green line are minimized between 40 to 90 trees. Therefore, the ideal number of trees to minimize error while accounting for overfitting would be 100.
+
+The RMSE between the predicted total number cases of dengue from the chosen gbm model and the actual total number of cases of dengue from the test set is shown below.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+
+# predict boost1 on test set to obtain yhat
+yhat_test_gbm = predict(boost1, dengue_test, n.trees=100)
+
+# RMSE between yhat and y from the test set
+RMSE(yhat_test_gbm , dengue_test$total_cases)
+
+```
+
+### Possion distribution
+
+This gbm model assumes poisson distibution since the variable of interest is a count variable. All parameters are the same as for the model shown above, except the number of trees is 100 based on the loss function above.
+The RMSE between the predicted total number cases of dengue from the chosen gbm model and the actual total number of cases of dengue from the test set is shown below.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+
+# build boosted regression trees with poisson distribution and 100 trees
+boost2 <- gbm(total_cases ~ city + season + specific_humidity + tdtr_k + precipitation_amt,
+                data = dengue_train,
+                distribution="poisson",
+                cv.folds = 10,
+                interaction.depth=4, n.trees=100, shrinkage=.05)
+
+# predict boost2 on test set to obtain yhat
+yhat_test_gbm2 <- predict(boost2, dengue_test, n.trees=100, type="response")
+
+# RMSE between yhat and y from the test set
+RMSE(yhat_test_gbm2,dengue_test$total_cases)
+
+```
+
+Since, the RMSE for the second gbm model is the lowest out of all the models observed above, it will be utilized to create partial dependence plots for the following variables: specific_humidity, precipitation_amt, and tdrk_k.
+
+## Partial dependence plots
+
+### specific_humidity
+
+The average specific humidity in grams of water per kilogram of air for the week. This is a raw measure of humidity based purely on how much water is in the air.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+plot(boost2, "specific_humidity")
+```
+
+### precipitation_amt
+
+Rainfall for the week in millimeters.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+plot(boost2, "precipitation_amt")
+```
+
+### tdtr_k"
+
+The average Diurnal Temperature Range (DTR) for the week. DTR is the difference between the maximum and minimum temperature for a single day.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+plot(boost2, "tdtr_k")
+```
