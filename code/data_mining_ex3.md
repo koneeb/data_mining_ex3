@@ -1,8 +1,8 @@
-Problem 1
-=========
+Problem 1: What causes what?
+============================
 
-1. Why can’t I just get data from a few different cities and run the regression of “Crime” on “Police” to understand how more cops in the streets affect crime? (“Crime” refers to some measure of crime rate and “Police” measures the number of cops in a city.)
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Why can’t I just get data from a few different cities and run the regression of “Crime” on “Police” to understand how more cops in the streets affect crime? (“Crime” refers to some measure of crime rate and “Police” measures the number of cops in a city.)
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Firstly, grouping data from different cities makes the incorrect
 assumption that the data points are independently and identically
@@ -17,8 +17,8 @@ lack of control variables in the regression as crime rates can be
 influenced by several other variables as mentioned above; this could
 lead to incorrect estimation of the effect of “Police” on “Crime”.
 
-2. How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers’ paper.
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers’ paper.
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 The researchers from UPenn narrowed down their research to only one
 city, Washington, D.C., assuming that the data points would be
@@ -61,8 +61,8 @@ statistically significant at the 5% and 1% level, respectively, the
 second regression performs better than the first regression, although by
 only a small margin.
 
-3. Why did they have to control for Metro ridership? What was that trying to capture?
--------------------------------------------------------------------------------------
+Why did they have to control for Metro ridership? What was that trying to capture?
+----------------------------------------------------------------------------------
 
 It is possible that on High Alert days, fewer people are out in the city
 due to higher threat levels of terrorism. Fewer people out in the city
@@ -72,8 +72,8 @@ controlled for. Metro ridership attempts to capture the number of
 potential victims of crime based on the changes in ridership with
 respect to High Alert days.
 
-4. Below I am showing you “Table 4” from the researchers’ paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Below I am showing you “Table 4” from the researchers’ paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 The researchers are estimating the district-specific effects of High
 Alert days on the daily total number of crimes in D.C., while
@@ -103,8 +103,8 @@ constant. However, a comparison between District 1 and Other Districts
 cannot be made due the lack of significance of the “High Alert x Other
 Districts” coefficient.
 
-Problem 2
-=========
+Problem 2: Tree modeling: dengue cases
+======================================
 
 CART model: Regression Tree
 ---------------------------
@@ -117,14 +117,14 @@ CART model: Regression Tree
 
 ### RMSE of predicting the regression tree on the test set
 
-    ## [1] 32.89083
+    ## [1] 29.93283
 
 Random Forests
 --------------
 
-### RMSE of predicting randam forest on the test set
+### RMSE of predicting random forest on the test set
 
-    ## [1] 31.72132
+    ## [1] 27.69444
 
 Gradient-Boosted Trees
 ----------------------
@@ -133,7 +133,7 @@ Gradient-Boosted Trees
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-5-1.png)
 
-    ## [1] 245
+    ## [1] 85
 
 The figure above displays a loss function as a result of n trees added
 to the ensemble for the chosen gradient boosted machine (gbm) model .
@@ -148,9 +148,9 @@ The RMSE between the predicted total number cases of dengue from the
 chosen gbm model and the actual total number of cases of dengue from the
 test set is shown below.
 
-    ## [1] 32.54443
+    ## [1] 28.23562
 
-### Possion distribution
+### Poisson distribution
 
 This gbm model assumes poisson distibution since the variable of
 interest is a count variable. All parameters are the same as for the
@@ -159,7 +159,7 @@ function above. The RMSE between the predicted total number cases of
 dengue from the chosen gbm model and the actual total number of cases of
 dengue from the test set is shown below.
 
-    ## [1] 32.72318
+    ## [1] 28.84149
 
 Since, the RMSE for the second gbm model is the lowest out of all the
 models observed above, it will be utilized to create partial dependence
@@ -183,9 +183,132 @@ Rainfall for the week in millimeters.
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-9-1.png)
 
-### tdtr\_k"
+### tdtr\_k
 
 The average Diurnal Temperature Range (DTR) for the week. DTR is the
 difference between the maximum and minimum temperature for a single day.
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-10-1.png)
+
+Problem 3: Predictive model building: green certification
+=========================================================
+
+Goal
+----
+
+The goal is to build the best predictive model possible for revenue per
+square foot per calendar year, and to use this model to quantify the
+average change in rental income per square foot ssociated with green
+certification, holding other features of the building constant.
+
+Methods
+-------
+
+I first created a new data frame with a ***revenue*** column which is a
+product of the ***Rent*** and ***leasing\_rate*** variables. Then to
+decide whether to include the green certifications of ***Energystar***
+and ***LEED*** separately or as a single green certification rating, I
+performed some exploratory analysis. I plotted ***mean\_revenue***
+against ***age*** faceted first by ***Energystar*** and
+***renovation***, and then by ***LEED*** and ***renovation***. I assumed
+that property age would be among the top influencers for mean revenue,
+so faceting the data by ***Energystar*** and ***LEED*** would reveal
+clearer effects of the two ratings on the mean revenue. I also faceted
+by ***renovation*** assuming that for older buildings, renovated
+properties are more likely to have green ratings. The plots reflect that
+buildings with the LEED certification tend to have lower mean revenues
+than the buildings with the Energystar certification, therefore I
+decided to include both the certification separately.
+
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-11-1.png)![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-11-2.png)
+
+Modeling approach
+-----------------
+
+### Random Forests
+
+I began by splitting 80% of the data into the training set and 20% into
+the testing set. I started with the random forests technique as it is
+quite robust, quick, and basically eliminates the need for
+cross-validation due to its “out-of-bag” predictions. I first utilized
+all of the features in the training set and calculated the resulting
+RMSE between the predcited revenue and the actual revenue in the testing
+set which is shown below. It is
+
+    ## [1] 775.0415
+
+To identify the important variables in the random forest model, I
+plotted the variable importance graph shown below. It can be seen that
+***hd\_total07***, ***LEED***, ***green\_rating***, ***net***, and
+***Energystar*** are the least important variables in that order
+(decreasing in importance).
+
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-13-1.png)
+
+Since ***LEED*** and ***Energystar*** are the variables under
+consideration, I created a new model by removing the other least
+important variables mentioned above to check for RMSE improvement in the
+new model. The RMSE of the new model is shown below. It is slightly
+lower than that of the previous model.
+
+    ## [1] 776.3518
+
+The partial dependence plots (pdp) for the ***LEED*** and
+***Energystar*** variables using the second random forests model are
+shown below.
+
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-15-1.png)![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-15-2.png)
+
+#### Conclusion
+
+The pdp for LEED shows that when LEED = 0, the predicted revenue per
+square foot per calendar year is 2450 and when LEED = 1, the predicted
+revenue per square foot per calendar year is slightly above 2600.
+Likewise, the pdp for Energystar shows that when Energystar = 0, the
+revenue per square foot per calendar year is slightly below 2435 and
+when Energystar = 1, the revenue per square foot per calendar year is
+approximately 2465. These plots reflect that the revenue predictions for
+buildings with green ratings are higher than buildings without a green
+rating, holding all else constant. Furthermore, buildings with LEED
+ratings have higher predicted revenues than buildings with Energystar
+ratings, holding all else constant.
+
+### Gradient Boosting (Model of Choice)
+
+I utilized the same training and test splits to evaulate a gradient
+boosted model with 10-fold cross validation. I assumed the Gaussian
+distribution with the following parameters: interaction.depth = 4,
+n.trees = 10000, shrinkage = .05. I ended up choosing such a high number
+of trees becuase the loss function kept showing the n-th tree as the
+mean-squared-error minimizer until I chose 10,000 and received a 9000+
+number as the mean-squared-error minimizer. The number of trees that
+minimized te mean-squared-error and a plot of the loss function is
+displayed below.
+
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-16-1.png)
+
+    ## [1] 9999
+
+The RMSE between the predicted revenue and the actual revenue from the
+test set is dislayed below. It is lower than that of the random forests
+model. Therefore, this model will be the model of choice.
+
+    ## [1] 787.5751
+
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-18-1.png)![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-18-2.png)
+
+#### Conclusion
+
+The pdp for LEED shows that when LEED = 0, the predicted revenue per
+square foot per calendar year is 2400 (lower than random forests’
+prediction) and when LEED = 1, the predicted revenue per square foot per
+calendar year is approximately 2750 (higher than random forests’
+prediction). Likewise, the pdp for Energystar shows that when Energystar
+= 0, the revenue per square foot per calendar year is approximately 2395
+(lower than random forests’ prediction) and when Energystar = 1, the
+revenue per square foot per calendar year is approximately 2445 (lower
+than random forests’ prediction). These plots reflect that the revenue
+predictions for buildings with green ratings are higher than buildings
+without a green rating, holding all else constant. Furthermore,
+buildings with LEED ratings have higher predicted revenues than
+buildings with Energystar ratings, holding all else constant.
