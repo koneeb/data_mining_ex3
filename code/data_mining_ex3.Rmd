@@ -101,7 +101,7 @@ rmse(rpart_fit_prune, dengue_test)
 
 ```
 
-## Random Forests
+## Random forest
 
 ###  RMSE of predicting random forest on the test set
 
@@ -133,9 +133,6 @@ boost1 <- gbm(total_cases ~ city + season + specific_humidity + tdtr_k + precipi
 
 # plot loss function as a result of n trees added to the ensemble
 gbm.perf(boost1, method = "cv")
-
-
-
 
 ```
 
@@ -175,7 +172,7 @@ RMSE(yhat_test_gbm2,dengue_test$total_cases)
 
 ```
 
-Since, the RMSE for the second gbm model is the lowest out of all the models observed above, it will be utilized to create partial dependence plots for the following variables: specific_humidity, precipitation_amt, and tdrk_k.
+Since, the RMSE for the random forest model is the lowest out of all the models observed above, it will be utilized to create partial dependence plots for the following variables: specific_humidity, precipitation_amt, and tdrk_k.
 
 ## Partial dependence plots
 
@@ -184,7 +181,7 @@ Since, the RMSE for the second gbm model is the lowest out of all the models obs
 The average specific humidity in grams of water per kilogram of air for the week. This is a raw measure of humidity based purely on how much water is in the air.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
-plot(boost2, "specific_humidity")
+partialPlot(random_forest_fit, dengue, "specific_humidity", las=1)
 ```
 
 ### precipitation_amt
@@ -192,7 +189,7 @@ plot(boost2, "specific_humidity")
 Rainfall for the week in millimeters.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
-plot(boost2, "precipitation_amt")
+partialPlot(random_forest_fit, dengue, "precipitation_amt", las=1)
 ```
 
 ### tdtr_k
@@ -200,143 +197,277 @@ plot(boost2, "precipitation_amt")
 The average Diurnal Temperature Range (DTR) for the week. DTR is the difference between the maximum and minimum temperature for a single day.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
-plot(boost2, "tdtr_k")
+partialPlot(random_forest_fit, dengue, "tdtr_k", las=1)
 ```
 
 # Problem 3: Predictive model building: green certification
 
 ## Goal
 
-The goal is to build the best predictive model possible for revenue per square foot per calendar year, and to use this model to quantify the average change in rental income per square foot ssociated with green certification, holding other features of the building constant.
+The goal is to build the best predictive model possible for revenue per square foot per calendar year, and to use this model to quantify the average change in rental income per square foot associated with green certification, holding other features of the building constant.
 
-## Methods
+## Data Pre-processing
 
-I first created a new data frame with a ***revenue*** column which is a product of the ***Rent*** and ***leasing_rate*** variables. Then to decide whether to include the green certifications of ***Energystar*** and ***LEED*** separately or as a single green certification rating, I performed some exploratory analysis. I plotted ***mean_revenue*** against ***age*** faceted first by ***Energystar*** and ***renovation***, and then by ***LEED*** and ***renovation***. I assumed that property age would be among the top influencers for mean revenue, so faceting the data by ***Energystar*** and ***LEED*** would reveal clearer effects of the two ratings on the mean revenue. I also faceted by ***renovation*** assuming that for older buildings, renovated properties are more likely to have green ratings.
-The plots reflect that buildings with the LEED certification tend to have lower mean revenues than the buildings with the Energystar certification, therefore I decided to include both the certification separately. 
+I first created a new data frame with a ***revenue*** column which is a product of the ***Rent*** and ***leasing_rate***/100 variables. Since ***leasing_rate*** is a percentage, I divided it by 100 to only get the factor effect. I also removed ***Rent*** and ***leasing_rate*** from the new data frame to prevent multicollinearity and eliminate the need to remove these two variables from the models specified below. As a final pre-processing step, I excluded any missing values in the dataset and split 80% of the data into the training set and 20% of the data into the test set.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 
 # read in the data
 green0 <- read.csv(here("data/greenbuildings.csv"))
 
-# create new dataframe with a revenue column
+# create new dataframe with a revenue column and remove rent and leasing rate
 green <- mutate(green0,
-                revenue = Rent*leasing_rate )
+                revenue = Rent*(leasing_rate/100))
 green <- select(green, -Rent, -leasing_rate)
+
 # exclude missing values
 green <- na.exclude(green)
-
-# exploratory
-factor_summ = green %>%
-  group_by(age, renovated, LEED, Energystar) %>%
-    summarize(mean_revenue = mean(revenue))
-
-ggplot(factor_summ) +
-  geom_col(aes(x=age, y=mean_revenue)) +
-  facet_grid(Energystar~renovated, labeller = label_both)
-
-ggplot(factor_summ) +
-  geom_col(aes(x=age, y=mean_revenue)) +
-  facet_grid(LEED~renovated, labeller = label_both)
 
 
 ```
 
 ## Modeling approach
 
-### Random Forests
+### Linear Model (Baseline)
 
-I began by splitting 80% of the data into the training set and 20% into the testing set. I started with the random forests technique as it is quite robust, quick, and basically eliminates the need for cross-validation due to its "out-of-bag" predictions. I first utilized all of the features in the training set and calculated the resulting RMSE between the predcited revenue and the actual revenue in the testing set which is shown below. It is 
+In order to have a baseline to compare other models to, I performed a multiple regression on all the features except ***total_dd_07***, and ***green_rating*** (to avoid multicollinearity) in the training set. The RMSE of predicting the linear model on the test set is shown below.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
-
+library(mosaic)
 
 # split the data into training and test sets
 green_split = initial_split(green, prop = 0.8)
 green_train = training(green_split)
 green_test = testing(green_split)
 
+# fit a linear model to the training set
+green_lm <- lm(revenue ~ . - total_dd_07 - green_rating, 
+                  data=green_train)
 
-# fit a random forest model on the train set
-green_random_forest_fit = randomForest(revenue ~ .,
+
+rmse_sim = do(10)*{
+  green_split = initial_split(green, prop = 0.8)
+  green_train = training(green_split)
+  green_test = testing(green_split)
+  
+  green_lm = update(green_lm, data=green_train)
+  
+
+  model_errors = c(rmse(green_lm, green_test))
+  
+}
+
+# Average performance across the splits
+ rmse_means_lm <- colMeans(rmse_sim)
+ rmse_means_lm
+```
+
+### Random forest (Model of Choice)
+
+I chose the random forest technique as it is quite robust, quick, and basically eliminates the need for cross-validation due to its "out-of-bag" predictions. I utilized all of the features in the training set except ***total_dd_07***, and ***green_rating*** (to avoid multicollinearity) and calculated the resulting RMSE between the predcited revenue from the model and the actual revenue from the test set which is shown below. It can be seen that the random forest model performs better than the linear model based on the RMSE difference between the two.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+
+# fit a random forest model on the training set
+green_random_forest_fit = randomForest(revenue ~ . - total_dd_07 - green_rating,
                            data=green_train, importance = TRUE)
-
+# calculate rmse of the model on the test set
 rmse(green_random_forest_fit, green_test)
 ```
 
-To identify the important variables in the random forest model, I plotted the variable importance graph shown below. It can be seen that ***hd_total07***, ***LEED***, ***green_rating***, ***net***, and ***Energystar*** are the least important variables in that order (decreasing in importance). 
+To identify the important variables in the random forest model, I built the variable importance plot shown below. It can be seen that ***hd_total07*** ***LEED***, ***Energystar***, and ***net*** are the least important variables, in that order (decreasing in importance). 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 vi = varImpPlot(green_random_forest_fit, type=1)
 ```
 
-Since ***LEED*** and ***Energystar*** are the variables under consideration, I created a new model by removing the other least important variables mentioned above to check for RMSE improvement in the new model. The RMSE of the new model is shown below. It is slightly lower than that of the previous model. 
+Since ***net*** is the least important variable, I attempted to further improve the current random forest model by removing it. The RMSE of the new model is shown below. Based on the RMSE, this model does not necessarily perform better than the previous random forest model; however, it still outperforms the multiple regression model.
 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
-# fit a random forest model on the train set
-green_random_forest_fit1 = randomForest(revenue ~ . - net - hd_total07 - green_rating,
+# fit a random forest model on the training set
+green_random_forest_fit1 = randomForest(revenue ~ . - total_dd_07 - green_rating - net,
                            data=green_train, importance = TRUE)
 
+# calculate rmse of the model on the test set
 rmse(green_random_forest_fit1, green_test)
 ```
 
-The partial dependence plots (pdp) for the ***LEED*** and ***Energystar*** variables using the second random forests model are shown below.
+To quantify the average change in revenue per square foot I decided to build partial dependence plots (pdp) associated with green certifications using the first random forest model. The pdp's for the ***LEED*** and ***Energystar*** variables are shown below.
 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 
-partialPlot(green_random_forest_fit1, green_test, "LEED", las=1)
-partialPlot(green_random_forest_fit1, green_test, "Energystar", las=1)
+partialPlot(green_random_forest_fit, green, "LEED", las=1)
+partialPlot(green_random_forest_fit, green, "Energystar", las=1)
 ```
 
 #### Conclusion
 
-The pdp for LEED shows that when LEED = 0, the predicted revenue per square foot per calendar year is 2450 and when LEED = 1, the predicted revenue per square foot per calendar year is slightly above 2600. Likewise, the pdp for Energystar shows that when Energystar = 0, the revenue per square foot per calendar year is slightly below 2435 and when Energystar = 1, the revenue per square foot per calendar year is approximately 2465. These plots reflect that the revenue predictions for buildings with green ratings are higher than buildings without a green rating, holding all else constant. Furthermore, buildings with LEED ratings have higher predicted revenues than buildings with Energystar ratings, holding all else constant. 
+The pdp for LEED shows that when LEED = 0, the predicted revenue per square foot per calendar year is slightly over 24 and when LEED = 1, the predicted revenue per square foot per calendar year is approximately 26. Likewise, the pdp for Energystar shows that when Energystar = 0, the revenue per square foot per calendar year is slightly above 24.05 and when Energystar = 1, the revenue per square foot per calendar year is approximately 24.4. 
 
-### Gradient Boosting (Model of Choice)
+These plots reflect that although the revenue predictions for buildings with green ratings are higher than buildings without green ratings, they are higher by only a small margin. For instance, buildings with a LEED certification are predicted to only make ~2 dollars more in revenue on average than buildings without a LEED certification. Likewise, buildings with an Energystar certification are predicted to only make ~35 cents more in revenue on average than buildings without an Energystar certification.
 
-I utilized the same training and test splits to evaulate a gradient boosted model with 10-fold cross validation. I assumed the Gaussian distribution with the following parameters: interaction.depth = 4, n.trees = 10000, shrinkage = .05. I ended up choosing such a high number of trees becuase the loss function kept showing the n-th tree as the mean-squared-error minimizer until I chose 10,000 and received a 9000+ number as the mean-squared-error minimizer. The number of trees that minimized te mean-squared-error and a plot of the loss function is displayed below.
+Hence, it can be concluded that energy certifications do not influence building revenue per square foot per calendar year very significantly. 
+
+## Problem 4:Predictive model building: California housing
+
+### Goal
+
+The goal is to build the best predictive model for median house values in California.
+
+## Data Pre-processing
+
+I created a new data frame with standardized versions of ***totalRooms*** and ***totalBedrooms*** obtained by dividing the two variables by the ***households*** variable to get averages instead of totals. Additionally, I removed ***totalRooms*** and ***totalBedrooms*** from the new data frame to avoid multicollinearity and save writing in model specification. Lastly, I excluded any missing values and split 80% of the data into the training set and 20% of the data into the test set. 
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+
+# read in the data
+ca_housing0 <- read.csv(here("data/CAhousing.csv"))
+
+# standardize totalRooms and totalBedrooms by households
+ca_housing <- mutate(ca_housing0,
+                avgRooms = (totalRooms/households),
+                avgBedrooms = (totalBedrooms/households))
+
+# remove unstandardized totalRooms and totalBedrooms
+ca_housing <- select(ca_housing, -totalRooms, -totalBedrooms)
+
+# exclude missing values
+green <- na.exclude(ca_housing)
+
+
+ca_housing_split = initial_split(ca_housing, prop = 0.8)
+ca_housing_train = training(ca_housing_split)
+ca_housing_test = testing(ca_housing_split)
+  
+
+```
+
+### Linear Model (Baseline)
+
+In order to have a baseline to compare other models to, I performed a multiple regression on all the features in the training set. The RMSE of predicting the linear model on the test set is shown below.
+
+````{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+
+ca_housing_lm <- lm(medianHouseValue ~ . , data=ca_housing_train)
+
+# fit a linear model to the training set
+ca_housing_rmse_sim = do(10)*{
+  ca_housing_split = initial_split(ca_housing, prop = 0.8)
+  ca_housing_train = training(ca_housing_split)
+  ca_housing_test = testing(ca_housing_split)
+
+  ca_housing_lm = update(ca_housing_lm, data=ca_housing_train)
+  
+
+  ca_housing_model_errors = c(rmse(ca_housing_lm, ca_housing_test))
+  
+}
+
+# Average performance across the splits
+ ca_housing_rmse_means_lm <- colMeans(ca_housing_rmse_sim)
+ ca_housing_rmse_means_lm
+```
+
+### Random Forest
+
+I utilized all of the features in the training set and calculated the resulting RMSE between the predcited revenue from the random forest model and the actual revenue from the test set which is shown below. It can be seen that the random forest model significantly outperforms the linear model based on the RMSE difference between the two (~18000).
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+
+# fit a random forest model on the training set
+ca_housing_random_forest_fit = randomForest(medianHouseValue ~ .,
+                           data=ca_housing_train, importance = TRUE)
+
+# calculate rmse of the model on the test set
+rmse(ca_housing_random_forest_fit, ca_housing_test)
+```
+
+### Gradient-Boosted Trees (Model of Choice)
+
+I used all of the features in the training set and assumed a Gaussian distibution for the gradient boosted model with 10-fold cross-validation. The parameters for this model are as follows:  interaction.depth = 4, n.trees = 3000, shrinkage = .05. I ended up choosing such a high number of trees becuase the loss function kept showing the n-th tree as the mean-squared-error minimizer until I chose 3,000 and received a 2,900+ number as the mean-squared-error minimizer. The number of trees that minimized the mean-squared-error and a plot of the loss function is displayed below.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 
 # build boosted regression trees with gaussian distribution and 10-fold cv
-green_boost <- gbm(revenue ~ . - net - hd_total07 - green_rating, 
-               data = green_train,
+ca_boost <- gbm(medianHouseValue ~ ., 
+               data = ca_housing_train,
                distribution = "gaussian",
                cv.folds = 10,
-               interaction.depth=4, n.trees=10000, shrinkage=.05)
+               interaction.depth=4, n.trees=3000, shrinkage=.05)
 
 # plot loss function as a result of n trees added to the ensemble
-gbm.perf(green_boost, method = "cv")
-
+gbm.perf(ca_boost, method = "cv")
 
 ```
 
-The RMSE between the predicted revenue and the actual revenue from the test set is dislayed below. It is lower than that of the random forests model. Therefore, this model will be the model of choice.
+The RMSE between the predicted revenue and the actual revenue from the test set is displayed below. It is lower than that of the random forest model. Therefore, this model will be the model of choice.
+
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 
-# predict green_boost on test set to obtain yhat
-yhat_test_gbm <- predict(green_boost, green_test, n.trees=10000, type="response")
+# predict boost on test set to obtain yhat
+ca_yhat_test_gbm = predict(ca_boost, ca_housing_test, n.trees=3000)
 
 # RMSE between yhat and y from the test set
-RMSE(yhat_test_gbm, green_test$revenue)
+RMSE(ca_yhat_test_gbm , ca_housing_test$medianHouseValue)
+
 ```
 
-```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
-plot(green_boost, "LEED")
-plot(green_boost, "Energystar")
-```
-
-#### Conclusion
-
-The pdp for LEED shows that when LEED = 0, the predicted revenue per square foot per calendar year is 2400 (lower than random forests' prediction) and when LEED = 1, the predicted revenue per square foot per calendar year is approximately 2750 (higher than random forests' prediction). Likewise, the pdp for Energystar shows that when Energystar = 0, the revenue per square foot per calendar year is approximately 2395 (lower than random forests' prediction) and when Energystar = 1, the revenue per square foot per calendar year is approximately 2445 (lower than random forests' prediction). These plots reflect that the revenue predictions for buildings with green ratings are higher than buildings without a green rating, holding all else constant. Furthermore, buildings with LEED ratings have higher predicted revenues than buildings with Energystar ratings, holding all else constant. 
+## Map Plots
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 
-```
-````{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+# plot the original data, using a color scale to show medianHouseValue versus longitude (x) and latitude (y).
 
+which_state <- "california"
+county_info <- map_data("county", region=which_state)
+
+base_map <- ggplot(data = county_info, mapping = aes(x = long, y = lat, group = group)) +
+ geom_polygon(color = "black", fill = "white") +
+  coord_quickmap() +
+  theme_void() 
+
+data_map <- base_map +
+  geom_point(data = ca_housing, aes(x=longitude, y=latitude, color=medianHouseValue, group=medianHouseValue)) +
+  scale_color_gradient(low="green", high="red") +
+  labs(title = str_wrap("A scatterplot of the actual Median House Values in California from the data set", 60),
+       color = "Median House Values") 
+
+
+data_map
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+
+pred_ca_housing <- ca_housing %>%
+  modelr::add_predictions(ca_boost)
+
+# plot gbm's predictions of medianHouseValue versus longitude (x) and latitude (y)
+pred_map <- base_map +
+  geom_point(data = pred_ca_housing, aes(x=longitude, y=latitude, color=pred, group=medianHouseValue)) +
+  scale_color_gradient(low="green", high="red") +
+  labs(title = str_wrap("A scatterplot of predicted Median House Values in California using the gradient boosting model", 60),
+              color = "Predicted Median House Values")
+
+pred_map
+
+```
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+
+pred_ca_housing <- pred_ca_housing %>%
+  mutate(residuals=(pred-medianHouseValue))
+
+# plot gbm's predictions of medianHouseValue versus longitude (x) and latitude (y)
+pred_map <- base_map +
+  geom_point(data = pred_ca_housing, aes(x=longitude, y=latitude, color=residuals, group=medianHouseValue)) +
+  scale_color_gradient2(low="blue", mid="green", high="red") +
+  labs(title = str_wrap("A scatterplot of residuals from the gradient boosting model", 60),
+              color = "Residuals")
+
+pred_map
 
 ```

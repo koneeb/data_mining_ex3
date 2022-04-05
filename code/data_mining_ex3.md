@@ -117,14 +117,14 @@ CART model: Regression Tree
 
 ### RMSE of predicting the regression tree on the test set
 
-    ## [1] 29.93283
+    ## [1] 26.21029
 
-Random Forests
---------------
+Random forest
+-------------
 
 ### RMSE of predicting random forest on the test set
 
-    ## [1] 27.69444
+    ## [1] 24.0171
 
 Gradient-Boosted Trees
 ----------------------
@@ -133,7 +133,7 @@ Gradient-Boosted Trees
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-5-1.png)
 
-    ## [1] 85
+    ## [1] 67
 
 The figure above displays a loss function as a result of n trees added
 to the ensemble for the chosen gradient boosted machine (gbm) model .
@@ -148,7 +148,7 @@ The RMSE between the predicted total number cases of dengue from the
 chosen gbm model and the actual total number of cases of dengue from the
 test set is shown below.
 
-    ## [1] 28.23562
+    ## [1] 25.23003
 
 ### Poisson distribution
 
@@ -159,9 +159,9 @@ function above. The RMSE between the predicted total number cases of
 dengue from the chosen gbm model and the actual total number of cases of
 dengue from the test set is shown below.
 
-    ## [1] 28.84149
+    ## [1] 24.57142
 
-Since, the RMSE for the second gbm model is the lowest out of all the
+Since, the RMSE for the random forest model is the lowest out of all the
 models observed above, it will be utilized to create partial dependence
 plots for the following variables: specific\_humidity,
 precipitation\_amt, and tdrk\_k.
@@ -198,117 +198,157 @@ Goal
 
 The goal is to build the best predictive model possible for revenue per
 square foot per calendar year, and to use this model to quantify the
-average change in rental income per square foot ssociated with green
+average change in rental income per square foot associated with green
 certification, holding other features of the building constant.
 
-Methods
--------
+Data Pre-processing
+-------------------
 
 I first created a new data frame with a ***revenue*** column which is a
-product of the ***Rent*** and ***leasing\_rate*** variables. Then to
-decide whether to include the green certifications of ***Energystar***
-and ***LEED*** separately or as a single green certification rating, I
-performed some exploratory analysis. I plotted ***mean\_revenue***
-against ***age*** faceted first by ***Energystar*** and
-***renovation***, and then by ***LEED*** and ***renovation***. I assumed
-that property age would be among the top influencers for mean revenue,
-so faceting the data by ***Energystar*** and ***LEED*** would reveal
-clearer effects of the two ratings on the mean revenue. I also faceted
-by ***renovation*** assuming that for older buildings, renovated
-properties are more likely to have green ratings. The plots reflect that
-buildings with the LEED certification tend to have lower mean revenues
-than the buildings with the Energystar certification, therefore I
-decided to include both the certification separately.
-
-![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-11-1.png)![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-11-2.png)
+product of the ***Rent*** and ***leasing\_rate***/100 variables. Since
+***leasing\_rate*** is a percentage, I divided it by 100 to only get the
+factor effect. I also removed ***Rent*** and ***leasing\_rate*** from
+the new data frame to prevent multicollinearity and eliminate the need
+to remove these two variables from the models specified below. As a
+final pre-processing step, I excluded any missing values in the dataset
+and split 80% of the data into the training set and 20% of the data into
+the test set.
 
 Modeling approach
 -----------------
 
-### Random Forests
+### Linear Model (Baseline)
 
-I began by splitting 80% of the data into the training set and 20% into
-the testing set. I started with the random forests technique as it is
-quite robust, quick, and basically eliminates the need for
-cross-validation due to its “out-of-bag” predictions. I first utilized
-all of the features in the training set and calculated the resulting
-RMSE between the predcited revenue and the actual revenue in the testing
-set which is shown below. It is
+In order to have a baseline to compare other models to, I performed a
+multiple regression on all the features except ***total\_dd\_07***, and
+***green\_rating*** (to avoid multicollinearity) in the training set.
+The RMSE of predicting the linear model on the test set is shown below.
 
-    ## [1] 775.0415
+    ##   result 
+    ## 10.53993
 
-To identify the important variables in the random forest model, I
-plotted the variable importance graph shown below. It can be seen that
-***hd\_total07***, ***LEED***, ***green\_rating***, ***net***, and
-***Energystar*** are the least important variables in that order
-(decreasing in importance).
+### Random forest (Model of Choice)
 
-![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-13-1.png)
+I chose the random forest technique as it is quite robust, quick, and
+basically eliminates the need for cross-validation due to its
+“out-of-bag” predictions. I utilized all of the features in the training
+set except ***total\_dd\_07***, and ***green\_rating*** (to avoid
+multicollinearity) and calculated the resulting RMSE between the
+predcited revenue from the model and the actual revenue from the test
+set which is shown below. It can be seen that the random forest model
+performs better than the linear model based on the RMSE difference
+between the two.
 
-Since ***LEED*** and ***Energystar*** are the variables under
-consideration, I created a new model by removing the other least
-important variables mentioned above to check for RMSE improvement in the
-new model. The RMSE of the new model is shown below. It is slightly
-lower than that of the previous model.
+    ## [1] 8.893612
 
-    ## [1] 776.3518
+To identify the important variables in the random forest model, I built
+the variable importance plot shown below. It can be seen that
+***hd\_total07*** ***LEED***, ***Energystar***, and ***net*** are the
+least important variables, in that order (decreasing in importance).
 
-The partial dependence plots (pdp) for the ***LEED*** and
-***Energystar*** variables using the second random forests model are
-shown below.
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-14-1.png)
 
-![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-15-1.png)![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-15-2.png)
+Since ***net*** is the least important variable, I attempted to further
+improve the current random forest model by removing it. The RMSE of the
+new model is shown below. Based on the RMSE, this model does not
+necessarily perform better than the previous random forest model;
+however, it still outperforms the multiple regression model.
+
+    ## [1] 8.918045
+
+To quantify the average change in revenue per square foot I decided to
+build partial dependence plots (pdp) associated with green
+certifications using the first random forest model. The pdp’s for the
+***LEED*** and ***Energystar*** variables are shown below.
+
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-16-1.png)![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-16-2.png)
 
 #### Conclusion
 
 The pdp for LEED shows that when LEED = 0, the predicted revenue per
-square foot per calendar year is 2450 and when LEED = 1, the predicted
-revenue per square foot per calendar year is slightly above 2600.
+square foot per calendar year is slightly over 24 and when LEED = 1, the
+predicted revenue per square foot per calendar year is approximately 26.
 Likewise, the pdp for Energystar shows that when Energystar = 0, the
-revenue per square foot per calendar year is slightly below 2435 and
+revenue per square foot per calendar year is slightly above 24.05 and
 when Energystar = 1, the revenue per square foot per calendar year is
-approximately 2465. These plots reflect that the revenue predictions for
-buildings with green ratings are higher than buildings without a green
-rating, holding all else constant. Furthermore, buildings with LEED
-ratings have higher predicted revenues than buildings with Energystar
-ratings, holding all else constant.
+approximately 24.4.
 
-### Gradient Boosting (Model of Choice)
+These plots reflect that although the revenue predictions for buildings
+with green ratings are higher than buildings without green ratings, they
+are higher by only a small margin. For instance, buildings with a LEED
+certification are predicted to only make ~2 dollars more in revenue on
+average than buildings without a LEED certification. Likewise, buildings
+with an Energystar certification are predicted to only make ~35 cents
+more in revenue on average than buildings without an Energystar
+certification.
 
-I utilized the same training and test splits to evaulate a gradient
-boosted model with 10-fold cross validation. I assumed the Gaussian
-distribution with the following parameters: interaction.depth = 4,
-n.trees = 10000, shrinkage = .05. I ended up choosing such a high number
-of trees becuase the loss function kept showing the n-th tree as the
-mean-squared-error minimizer until I chose 10,000 and received a 9000+
-number as the mean-squared-error minimizer. The number of trees that
-minimized te mean-squared-error and a plot of the loss function is
-displayed below.
+Hence, it can be concluded that energy certifications do not influence
+building revenue per square foot per calendar year very significantly.
 
-![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-16-1.png)
+Problem 4:Predictive model building: California housing
+-------------------------------------------------------
 
-    ## [1] 9999
+### Goal
+
+The goal is to build the best predictive model for median house values
+in California.
+
+Data Pre-processing
+-------------------
+
+I created a new data frame with standardized versions of
+***totalRooms*** and ***totalBedrooms*** obtained by dividing the two
+variables by the ***households*** variable to get averages instead of
+totals. Additionally, I removed ***totalRooms*** and ***totalBedrooms***
+from the new data frame to avoid multicollinearity and save writing in
+model specification. Lastly, I excluded any missing values and split 80%
+of the data into the training set and 20% of the data into the test set.
+
+### Linear Model (Baseline)
+
+In order to have a baseline to compare other models to, I performed a
+multiple regression on all the features in the training set. The RMSE of
+predicting the linear model on the test set is shown below.
+
+    ##   result 
+    ## 69731.69
+
+### Random Forest
+
+I utilized all of the features in the training set and calculated the
+resulting RMSE between the predcited revenue from the random forest
+model and the actual revenue from the test set which is shown below. It
+can be seen that the random forest model significantly outperforms the
+linear model based on the RMSE difference between the two (~18000).
+
+    ## [1] 49701.57
+
+### Gradient-Boosted Trees (Model of Choice)
+
+I used all of the features in the training set and assumed a Gaussian
+distibution for the gradient boosted model with 10-fold
+cross-validation. The parameters for this model are as follows:
+interaction.depth = 4, n.trees = 3000, shrinkage = .05. I ended up
+choosing such a high number of trees becuase the loss function kept
+showing the n-th tree as the mean-squared-error minimizer until I chose
+3,000 and received a 2,900+ number as the mean-squared-error minimizer.
+The number of trees that minimized the mean-squared-error and a plot of
+the loss function is displayed below.
+
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-20-1.png)
+
+    ## [1] 2995
 
 The RMSE between the predicted revenue and the actual revenue from the
-test set is dislayed below. It is lower than that of the random forests
+test set is displayed below. It is lower than that of the random forest
 model. Therefore, this model will be the model of choice.
 
-    ## [1] 787.5751
+    ## [1] 46611.1
 
-![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-18-1.png)![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-18-2.png)
+Map Plots
+---------
 
-#### Conclusion
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-22-1.png)
 
-The pdp for LEED shows that when LEED = 0, the predicted revenue per
-square foot per calendar year is 2400 (lower than random forests’
-prediction) and when LEED = 1, the predicted revenue per square foot per
-calendar year is approximately 2750 (higher than random forests’
-prediction). Likewise, the pdp for Energystar shows that when Energystar
-= 0, the revenue per square foot per calendar year is approximately 2395
-(lower than random forests’ prediction) and when Energystar = 1, the
-revenue per square foot per calendar year is approximately 2445 (lower
-than random forests’ prediction). These plots reflect that the revenue
-predictions for buildings with green ratings are higher than buildings
-without a green rating, holding all else constant. Furthermore,
-buildings with LEED ratings have higher predicted revenues than
-buildings with Energystar ratings, holding all else constant.
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-23-1.png)
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-24-1.png)
