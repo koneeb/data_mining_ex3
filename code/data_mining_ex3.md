@@ -127,7 +127,7 @@ dengue cases.
 
 ### RMSE of predicting the regression tree on the test set
 
-    ## [1] 28.69538
+    ## [1] 24.69662
 
 Random forest
 -------------
@@ -137,7 +137,7 @@ total dengue cases.
 
 ### RMSE of predicting random forest on the test set
 
-    ## [1] 26.35863
+    ## [1] 22.93888
 
 Gradient-Boosted Trees
 ----------------------
@@ -150,7 +150,7 @@ distribution and then built another model assuming Poisson distribution.
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-5-1.png)
 
-    ## [1] 67
+    ## [1] 66
 
 The figure above displays a loss function as a result of n trees added
 to the ensemble for the chosen gradient boosted machine (gbm) model .
@@ -166,7 +166,7 @@ The RMSE between the predicted total number cases of dengue from the
 chosen gbm model and the actual total number of cases of dengue from the
 test set is shown below.
 
-    ## [1] 27.84624
+    ## [1] 24.4453
 
 ### Poisson distribution
 
@@ -177,7 +177,7 @@ function above. The RMSE between the predicted total number cases of
 dengue from the chosen gbm model and the actual total number of cases of
 dengue from the test set is shown below.
 
-    ## [1] 27.20808
+    ## [1] 24.01371
 
 Since, the RMSE for the random forest model is the lowest out of all the
 models observed above, it will be utilized to create partial dependence
@@ -262,7 +262,7 @@ multiple regression on all the features except ***total\_dd\_07***, and
 The RMSE of predicting the linear model on the test set is shown below.
 
     ##   result 
-    ## 10.42577
+    ## 10.88581
 
 ### Random forest (Model of Choice)
 
@@ -276,7 +276,7 @@ set which is shown below. It can be seen that the random forest model
 performs better than the linear model based on the RMSE difference
 between the two.
 
-    ## [1] 7.118311
+    ## [1] 7.516652
 
 To identify the important variables in the random forest model, I built
 the variable importance plot shown below. It can be seen that
@@ -291,7 +291,7 @@ new model is shown below. Based on the RMSE, this model does not
 necessarily perform better than the previous random forest model;
 however, it still outperforms the multiple regression model.
 
-    ## [1] 7.107853
+    ## [1] 7.428497
 
 To quantify the average change in revenue per square foot I decided to
 build partial dependence plots (pdp) associated with green
@@ -323,8 +323,8 @@ certification.
 Hence, it can be concluded that energy certifications do not influence
 building revenue per square foot per calendar year very significantly.
 
-Problem 4:Predictive model building: California housing
-=======================================================
+Problem 4: Predictive model building: California housing
+========================================================
 
 Goal
 ----
@@ -356,7 +356,7 @@ multiple regression on all the features in the training set. The RMSE of
 predicting the linear model on the test set is shown below.
 
     ##   result 
-    ## 69989.88
+    ## 69369.46
 
 ### Random Forest
 
@@ -366,10 +366,16 @@ model and the actual revenue from the test set which is shown below. It
 can be seen that the random forest model significantly outperforms the
 linear model based on the RMSE difference between the two (~18000).
 
-    ## [1] 51979.25
+    ## [1] 51763.99
+
+Below is the variable importance plot of the random forests model.
+Observing the scale of the x-axis, it can be concluded that all of these
+variables are important in building the model. Hence, I will keep the
+model as is.
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-20-1.png)
-\#\#\# Gradient-Boosted Trees (Model of Choice)
+
+### Gradient-Boosted Trees (Model of Choice)
 
 I used all of the features in the training set and assumed a Gaussian
 distibution for the gradient boosted model with 10-fold
@@ -385,16 +391,19 @@ RMSE measure and arrived at the chosen parameters.
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-21-1.png)
 
-    ## [1] 3000
+    ## [1] 2999
 
 The RMSE between the predicted revenue and the actual revenue from the
 test set is displayed below. It is lower than that of the random forest
 model. Therefore, this model will be the model of choice.
 
-    ## [1] 47993.34
+    ## [1] 48115.14
 
 Map Plots
 ---------
+
+I used the gradient boosted model above to build three map plots shown
+below.
 
 ### Actual Median House Values
 
@@ -418,7 +427,7 @@ mostly orange data points are observed in place of red ones.
 ### Residuals
 
 The distribution of the residuals from the gbm model is shown below on
-the California map. The resisduals were calculated as differenced
+the California map. The resisduals were calculated as differences
 between predicted median house values and actual median house values.
 Blue-ish points represent negative differences, green points represent
 minimal to no differences, and red-ish points represent positive

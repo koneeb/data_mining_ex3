@@ -327,7 +327,7 @@ These plots reflect that although the revenue predictions for buildings with gre
 
 Hence, it can be concluded that energy certifications do not influence building revenue per square foot per calendar year very significantly. 
 
-# Problem 4:Predictive model building: California housing
+# Problem 4: Predictive model building: California housing
 
 ## Goal
 
@@ -405,6 +405,9 @@ ca_housing_random_forest_fit = randomForest(medianHouseValue ~ .,
 # calculate rmse of the model on the test set
 rmse(ca_housing_random_forest_fit, ca_housing_test)
 ```
+
+Below is the variable importance plot of the random forests model. Observing the scale of the x-axis, it can be concluded that all of these variables are important in building the model. Hence, I will keep the model as is. 
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 vi1 = varImpPlot(ca_housing_random_forest_fit, type=1)
 ```
@@ -441,6 +444,8 @@ RMSE(ca_yhat_test_gbm , ca_housing_test$medianHouseValue)
 ```
 
 ## Map Plots
+
+I used the gradient boosted model above to build three map plots shown below.
 
 ### Actual Median House Values
 
@@ -490,7 +495,7 @@ pred_map
 
 ### Residuals
 
-The distribution of the residuals from the gbm model is shown below on the California map. The resisduals were calculated as differenced between predicted median house values and actual median house values. Blue-ish points represent negative differences, green points represent minimal to no differences, and red-ish points represent positive differences. It can be seen that most of the data points are in the green range, which reflects the success of the gbm model in predicting median house values. 
+The distribution of the residuals from the gbm model is shown below on the California map. The resisduals were calculated as differences between predicted median house values and actual median house values. Blue-ish points represent negative differences, green points represent minimal to no differences, and red-ish points represent positive differences. It can be seen that most of the data points are in the green range, which reflects the success of the gbm model in predicting median house values. 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 
