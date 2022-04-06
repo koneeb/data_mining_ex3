@@ -1,24 +1,25 @@
 Problem 1: What causes what?
 ============================
 
-Why can’t I just get data from a few different cities and run the regression of “Crime” on “Police” to understand how more cops in the streets affect crime? (“Crime” refers to some measure of crime rate and “Police” measures the number of cops in a city.)
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1. Why can’t I just get data from a few different cities and run the regression of “Crime” on “Police” to understand how more cops in the streets affect crime?
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Firstly, grouping data from different cities makes the incorrect
 assumption that the data points are independently and identically
 distributed among cities. Crime rates and police measures vary among
 cities, and factors that influence these two variables, such as, police
 budgets, population, income levels, criminal punishments, etc. also vary
-amongst cities. As a result, combining data from different cities could
-distort the outcome of the regression. Secondly, while police measures
-affect crime rates, crime rates also affect the level of police
-measures, leading to a simultaneous causality bias. Thirdly, there is a
-lack of control variables in the regression as crime rates can be
-influenced by several other variables as mentioned above; this could
-lead to incorrect estimation of the effect of “Police” on “Crime”.
+amongst cities depending on varying state laws. As a result, combining
+data from different cities could distort the outcome of the regression.
+Secondly, while police measures affect crime rates, crime rates also
+affect the level of police measures, leading to a simultaneous causality
+bias. Thirdly, there is a lack of control variables in the regression as
+crime rates can be influenced by several other variables as mentioned
+above; this could lead to incorrect estimation of the effect of “Police”
+on “Crime”.
 
-How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers’ paper.
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2. How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers’ paper.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 The researchers from UPenn narrowed down their research to only one
 city, Washington, D.C., assuming that the data points would be
@@ -61,8 +62,8 @@ statistically significant at the 5% and 1% level, respectively, the
 second regression performs better than the first regression, although by
 only a small margin.
 
-Why did they have to control for Metro ridership? What was that trying to capture?
-----------------------------------------------------------------------------------
+3. Why did they have to control for Metro ridership? What was that trying to capture?
+-------------------------------------------------------------------------------------
 
 It is possible that on High Alert days, fewer people are out in the city
 due to higher threat levels of terrorism. Fewer people out in the city
@@ -72,8 +73,8 @@ controlled for. Metro ridership attempts to capture the number of
 potential victims of crime based on the changes in ridership with
 respect to High Alert days.
 
-Below I am showing you “Table 4” from the researchers’ paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+4. Below I am showing you “Table 4” from the researchers’ paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 The researchers are estimating the district-specific effects of High
 Alert days on the daily total number of crimes in D.C., while
@@ -109,25 +110,41 @@ Problem 2: Tree modeling: dengue cases
 CART model: Regression Tree
 ---------------------------
 
+Below is an unpruned regression tree that utilizes the following
+variables: ***cityseason***, ***specific\_humidity***, ***tdtr\_k***,
+and ***precipitation\_amt*** to predict the total dengue cases,
+***total\_cases***.
+
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-1-1.png)
 
 ### Pruned regression tree at the 1 standard error complexity level
+
+Below is a pruned regression tree that uses the same variables as the
+tree above at the 1 standard error complexity level to predict total
+dengue cases.
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-2-1.png)
 
 ### RMSE of predicting the regression tree on the test set
 
-    ## [1] 26.21029
+    ## [1] 28.69538
 
 Random forest
 -------------
 
+The random forest model also utilizes the same variables to predict the
+total dengue cases.
+
 ### RMSE of predicting random forest on the test set
 
-    ## [1] 24.0171
+    ## [1] 26.35863
 
 Gradient-Boosted Trees
 ----------------------
+
+The gradient boosted model also utilizes the same variables to predict
+the total dengue cases. I first built a model assuming Gaussian
+distribution and then built another model assuming Poisson distribution.
 
 ### Gaussian distribution
 
@@ -137,18 +154,19 @@ Gradient-Boosted Trees
 
 The figure above displays a loss function as a result of n trees added
 to the ensemble for the chosen gradient boosted machine (gbm) model .
-The model assumes gaussian distibution with 500 trees. The squared error
+The model assumes Gaussian distibution with 500 trees. The squared error
 loss is shown on the y-axis and numbers of trees is on the x-axis. It
 can be seen that the cross-validated errors represented by the green
 line are minimized between 40 to 90 trees. Therefore, the ideal number
 of trees to minimize error while accounting for overfitting would be
-100.
+100. The number of trees that minimizes the squared error loss in this
+run of the model is also displayed above.
 
 The RMSE between the predicted total number cases of dengue from the
 chosen gbm model and the actual total number of cases of dengue from the
 test set is shown below.
 
-    ## [1] 25.23003
+    ## [1] 27.84624
 
 ### Poisson distribution
 
@@ -159,7 +177,7 @@ function above. The RMSE between the predicted total number cases of
 dengue from the chosen gbm model and the actual total number of cases of
 dengue from the test set is shown below.
 
-    ## [1] 24.57142
+    ## [1] 27.20808
 
 Since, the RMSE for the random forest model is the lowest out of all the
 models observed above, it will be utilized to create partial dependence
@@ -175,11 +193,23 @@ The average specific humidity in grams of water per kilogram of air for
 the week. This is a raw measure of humidity based purely on how much
 water is in the air.
 
+It can be seen from the plot below that as the average specific humidity
+rises, the predicted number of dengue cases also rises until it flatten
+outs as the average specific humidity approaches 19 grams of water per
+kilogram of air for the week.
+
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-8-1.png)
 
 ### precipitation\_amt
 
 Rainfall for the week in millimeters.
+
+It can be seen from the plot below that the relationship between
+predicted dengue cases and precipitation is quite volatile until
+precipitation reaches 100 millimeters. Beyond 100 millimeters of
+precipitation, there seems to be a positive relationship between dengue
+cases and precipitation until it becomes levels off beyond 290
+millimeters of precipitation.
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-9-1.png)
 
@@ -187,6 +217,11 @@ Rainfall for the week in millimeters.
 
 The average Diurnal Temperature Range (DTR) for the week. DTR is the
 difference between the maximum and minimum temperature for a single day.
+
+It can be seen from the plot below that there is a negative relationship
+between dengue cases and DTR until DTR reaches approximately 7. Beyond
+that point, the dengue cases remain relatively constant as DTR
+increases.
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-10-1.png)
 
@@ -212,7 +247,9 @@ the new data frame to prevent multicollinearity and eliminate the need
 to remove these two variables from the models specified below. As a
 final pre-processing step, I excluded any missing values in the dataset
 and split 80% of the data into the training set and 20% of the data into
-the test set.
+the test set. Note: I did not scale the data since the modeling
+approaches I will be pursuing do not involve distances, hence they are
+not sensitive to the variance in the data.
 
 Modeling approach
 -----------------
@@ -225,7 +262,7 @@ multiple regression on all the features except ***total\_dd\_07***, and
 The RMSE of predicting the linear model on the test set is shown below.
 
     ##   result 
-    ## 10.53993
+    ## 10.42577
 
 ### Random forest (Model of Choice)
 
@@ -239,7 +276,7 @@ set which is shown below. It can be seen that the random forest model
 performs better than the linear model based on the RMSE difference
 between the two.
 
-    ## [1] 8.893612
+    ## [1] 7.118311
 
 To identify the important variables in the random forest model, I built
 the variable importance plot shown below. It can be seen that
@@ -254,7 +291,7 @@ new model is shown below. Based on the RMSE, this model does not
 necessarily perform better than the previous random forest model;
 however, it still outperforms the multiple regression model.
 
-    ## [1] 8.918045
+    ## [1] 7.107853
 
 To quantify the average change in revenue per square foot I decided to
 build partial dependence plots (pdp) associated with green
@@ -263,7 +300,8 @@ certifications using the first random forest model. The pdp’s for the
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-16-1.png)![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-16-2.png)
 
-#### Conclusion
+Conclusion
+----------
 
 The pdp for LEED shows that when LEED = 0, the predicted revenue per
 square foot per calendar year is slightly over 24 and when LEED = 1, the
@@ -286,9 +324,10 @@ Hence, it can be concluded that energy certifications do not influence
 building revenue per square foot per calendar year very significantly.
 
 Problem 4:Predictive model building: California housing
--------------------------------------------------------
+=======================================================
 
-### Goal
+Goal
+----
 
 The goal is to build the best predictive model for median house values
 in California.
@@ -303,6 +342,12 @@ totals. Additionally, I removed ***totalRooms*** and ***totalBedrooms***
 from the new data frame to avoid multicollinearity and save writing in
 model specification. Lastly, I excluded any missing values and split 80%
 of the data into the training set and 20% of the data into the test set.
+Note: I did not scale the data since the modeling approaches I will be
+pursuing do not involve distances, hence they are not sensitive to the
+variance in the data.
+
+Modeling Approach
+-----------------
 
 ### Linear Model (Baseline)
 
@@ -311,7 +356,7 @@ multiple regression on all the features in the training set. The RMSE of
 predicting the linear model on the test set is shown below.
 
     ##   result 
-    ## 69731.69
+    ## 69989.88
 
 ### Random Forest
 
@@ -321,9 +366,10 @@ model and the actual revenue from the test set which is shown below. It
 can be seen that the random forest model significantly outperforms the
 linear model based on the RMSE difference between the two (~18000).
 
-    ## [1] 49701.57
+    ## [1] 51979.25
 
-### Gradient-Boosted Trees (Model of Choice)
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-20-1.png)
+\#\#\# Gradient-Boosted Trees (Model of Choice)
 
 I used all of the features in the training set and assumed a Gaussian
 distibution for the gradient boosted model with 10-fold
@@ -333,22 +379,51 @@ choosing such a high number of trees becuase the loss function kept
 showing the n-th tree as the mean-squared-error minimizer until I chose
 3,000 and received a 2,900+ number as the mean-squared-error minimizer.
 The number of trees that minimized the mean-squared-error and a plot of
-the loss function is displayed below.
+the loss function is displayed below. Additionally, I manually
+cross-validated the interaction depth and shrinkage based on the lowest
+RMSE measure and arrived at the chosen parameters.
 
-![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-20-1.png)
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-21-1.png)
 
-    ## [1] 2995
+    ## [1] 3000
 
 The RMSE between the predicted revenue and the actual revenue from the
 test set is displayed below. It is lower than that of the random forest
 model. Therefore, this model will be the model of choice.
 
-    ## [1] 46611.1
+    ## [1] 47993.34
 
 Map Plots
 ---------
 
-![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-22-1.png)
+### Actual Median House Values
+
+The distribution of the actual median house values is shown below on the
+California map. The values increase from green to red on the color
+scale.
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-23-1.png)
+
+### Predicted Median House Values
+
+The distribution of the gbm predicted median house values is shown below
+on the California map. The values increase from green to red on the
+color scale. The color distribution is quite similiar to that of the
+actual values, with the exception of high values. It seems that my model
+did not predict the high values as high as they should have been since
+mostly orange data points are observed in place of red ones.
+
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-24-1.png)
+
+### Residuals
+
+The distribution of the residuals from the gbm model is shown below on
+the California map. The resisduals were calculated as differenced
+between predicted median house values and actual median house values.
+Blue-ish points represent negative differences, green points represent
+minimal to no differences, and red-ish points represent positive
+differences. It can be seen that most of the data points are in the
+green range, which reflects the success of the gbm model in predicting
+median house values.
+
+![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-25-1.png)

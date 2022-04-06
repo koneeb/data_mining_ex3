@@ -11,11 +11,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Problem 1: What causes what?
 
-## Why can’t I just get data from a few different cities and run the regression of “Crime” on “Police” to understand how more cops in the streets affect crime? (“Crime” refers to some measure of crime rate and “Police” measures the number of cops in a city.)
+## 1. Why can’t I just get data from a few different cities and run the regression of “Crime” on “Police” to understand how more cops in the streets affect crime? 
 
-Firstly, grouping data from different cities makes the incorrect assumption that the data points are independently and identically distributed among cities. Crime rates and police measures vary among cities, and factors that influence these two variables, such as, police budgets, population, income levels, criminal punishments, etc. also vary amongst cities. As a result, combining data from different cities could distort the outcome of the regression. Secondly, while police measures affect crime rates, crime rates also affect the level of police measures, leading to a simultaneous causality bias. Thirdly, there is a lack of control variables in the regression as crime rates can be influenced by several other variables as mentioned above; this could lead to incorrect estimation of the effect of "Police" on "Crime".
+Firstly, grouping data from different cities makes the incorrect assumption that the data points are independently and identically distributed among cities. Crime rates and police measures vary among cities, and factors that influence these two variables, such as, police budgets, population, income levels, criminal punishments, etc. also vary amongst cities depending on varying state laws. As a result, combining data from different cities could distort the outcome of the regression. 
+Secondly, while police measures affect crime rates, crime rates also affect the level of police measures, leading to a simultaneous causality bias. Thirdly, there is a lack of control variables in the regression as crime rates can be influenced by several other variables as mentioned above; this could lead to incorrect estimation of the effect of "Police" on "Crime".
 
-## How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers' paper.
+## 2. How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers' paper.
 
 The researchers from UPenn narrowed down their research to only one city, Washington, D.C., assuming that the data points would be identically distributed within a city. To deal with the simultaneous causality bias, they chose Washington, D.C. because it is more likely to be a terrorism target compared to other cities in the U.S. This allowed the researchers to utilize the "High Alert" variable as the instrument variable to address simultaneity. In other words, when there is High Alert (High Alert = 1), extra police is deployed in the city to protect against terrorists; in this setup the deployment of the extra police is not directly related to the variable of interest, "Crime". So, the High Alert variable is able to capture the effect of police measures on crime rates without crime rates affecting police measures. They also added the log of midday ridership on the Metro as a control variable to test whether there were fewer victims out in the city becuase of the High Alert.
 
@@ -23,11 +24,11 @@ Table 2 summarizes their results as two regressions. The first regression only u
 
 The second regression adds the log of midday ridership to the first regression as a control variable. This leads to -6.046 as the coefficient on High Alert at the 5% significance level, meaning that on a High Alert day, the daily total number of crimes in D.C. falls by 6.046 units, holding all else constant. The coefficient on "Log(midday ridership)" is 17.341 which is significant at the 1% level. This means if midday ridership on the Metro increases by 1 percent, the daily total number of crimes in D.C. increase by 0.173 units, holding all else constant. The R-sqaured of this regression, 0.17, is slightly higher than that of the first regression. It means only 17% of the varation in crime rates in D.C. is described by the covariates in the model. Given that, since both of the coefficients in this regression are statistically significant at the 5% and 1% level, respectively, the second regression performs better than the first regression, although by only a small margin. 
 
-## Why did they have to control for Metro ridership? What was that trying to capture?
+## 3. Why did they have to control for Metro ridership? What was that trying to capture?
 
 It is possible that on High Alert days, fewer people are out in the city due to higher threat levels of terrorism. Fewer people out in the city means fewer victims of crime which could lead to lower crime rates. Therefore, to account for this effect, Metro ridership needs to be controlled for. Metro ridership attempts to capture the number of potential victims of crime based on the changes in ridership with respect to High Alert days. 
 
-## Below I am showing you "Table 4" from the researchers' paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?
+## 4. Below I am showing you "Table 4" from the researchers' paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?
 
 The researchers are estimating the district-specific effects of High Alert days on the daily total number of crimes in D.C., while controlling for Metro ridership using a multiple regression approach with heteroscedastic errors. They introduce two district dummy variables, "District 1" and "Other Districts" and interact both the district dummy variables with the the High Alert variable to estimate district-specific effects. 
 The coefficient on "High Alert x District 1" shows that on a High Alert day in District 1, the daily total number of crimes in D.C. falls by 13.679 units, holding all else constant. This coefficient is statistically significant at the 1% level. Similarly, the coefficient on "High Alert x Other Districts" shows that on a High Alert day in any other district, the daily total number of crimes in D.C. falls by 11.629 units, holding all else constant. These results reflect that a High Alert day in District 1 reduces crime rates more than a High Alert day in any other district. However, the coefficent on "High Alert x Other Districts" is not statistically significant. Lastly, the coefficient on "Log (midday ridership)" reflects that a 1 percent increase in midday ridership on the Metro increases the daily total number of crimes in D.C. 2.477 units, holding all else constant. This coefficient is statistically significant at the 5% level. 
@@ -37,6 +38,8 @@ Given the statisical significance of the coefficients, it can be concluded that 
 # Problem 2: Tree modeling: dengue cases
 
 ## CART model: Regression Tree
+
+Below is an unpruned regression tree that utilizes the following variables: ***cityseason***, ***specific_humidity***, ***tdtr_k***, and ***precipitation_amt*** to predict the total dengue cases, ***total_cases***.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 library(here)
@@ -77,6 +80,8 @@ rpart.plot(rpart_fit, digits=-5, type=4, extra=1)
 
 ### Pruned regression tree at the 1 standard error complexity level
 
+Below is a pruned regression tree that uses the same variables as the tree above at the 1 standard error complexity level to predict total dengue cases.
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 # function to prune a tree at the 1se level
 prune_1se = function(my_tree) {
@@ -103,6 +108,8 @@ rmse(rpart_fit_prune, dengue_test)
 
 ## Random forest
 
+The random forest model also utilizes the same variables to predict the total dengue cases.
+
 ###  RMSE of predicting random forest on the test set
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
@@ -119,7 +126,10 @@ rmse(random_forest_fit, dengue_test)
 
 ## Gradient-Boosted Trees
 
+The gradient boosted model also utilizes the same variables to predict the total dengue cases. I first built a model assuming Gaussian distribution and then built another model assuming Poisson distribution.
+
 ### Gaussian distribution
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 library(gbm)
 library(caret)
@@ -136,7 +146,7 @@ gbm.perf(boost1, method = "cv")
 
 ```
 
-The figure above displays a loss function as a result of n trees added to the ensemble for the chosen gradient boosted machine (gbm) model . The model assumes gaussian distibution with 500 trees. The squared error loss is shown on the y-axis and numbers of trees is on the x-axis. It can be seen that the cross-validated errors represented by the green line are minimized between 40 to 90 trees. Therefore, the ideal number of trees to minimize error while accounting for overfitting would be 100.
+The figure above displays a loss function as a result of n trees added to the ensemble for the chosen gradient boosted machine (gbm) model . The model assumes Gaussian distibution with 500 trees. The squared error loss is shown on the y-axis and numbers of trees is on the x-axis. It can be seen that the cross-validated errors represented by the green line are minimized between 40 to 90 trees. Therefore, the ideal number of trees to minimize error while accounting for overfitting would be 100. The number of trees that minimizes the squared error loss in this run of the model is also displayed above.
 
 The RMSE between the predicted total number cases of dengue from the chosen gbm model and the actual total number of cases of dengue from the test set is shown below.
 
@@ -180,6 +190,8 @@ Since, the RMSE for the random forest model is the lowest out of all the models 
 
 The average specific humidity in grams of water per kilogram of air for the week. This is a raw measure of humidity based purely on how much water is in the air.
 
+It can be seen from the plot below that as the average specific humidity rises, the predicted number of dengue cases also rises until it flatten outs as the average specific humidity approaches 19 grams of water per kilogram of air for the week.
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 partialPlot(random_forest_fit, dengue, "specific_humidity", las=1)
 ```
@@ -188,6 +200,8 @@ partialPlot(random_forest_fit, dengue, "specific_humidity", las=1)
 
 Rainfall for the week in millimeters.
 
+It can be seen from the plot below that the relationship between predicted dengue cases and precipitation is quite volatile until precipitation reaches 100 millimeters. Beyond 100 millimeters of precipitation, there seems to be a positive relationship between dengue cases and precipitation until it becomes levels off beyond 290 millimeters of precipitation.
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 partialPlot(random_forest_fit, dengue, "precipitation_amt", las=1)
 ```
@@ -195,6 +209,8 @@ partialPlot(random_forest_fit, dengue, "precipitation_amt", las=1)
 ### tdtr_k
 
 The average Diurnal Temperature Range (DTR) for the week. DTR is the difference between the maximum and minimum temperature for a single day.
+
+It can be seen from the plot below that there is a negative relationship between dengue cases and DTR until DTR reaches approximately 7. Beyond that point, the dengue cases remain relatively constant as DTR increases. 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 partialPlot(random_forest_fit, dengue, "tdtr_k", las=1)
@@ -208,7 +224,8 @@ The goal is to build the best predictive model possible for revenue per square f
 
 ## Data Pre-processing
 
-I first created a new data frame with a ***revenue*** column which is a product of the ***Rent*** and ***leasing_rate***/100 variables. Since ***leasing_rate*** is a percentage, I divided it by 100 to only get the factor effect. I also removed ***Rent*** and ***leasing_rate*** from the new data frame to prevent multicollinearity and eliminate the need to remove these two variables from the models specified below. As a final pre-processing step, I excluded any missing values in the dataset and split 80% of the data into the training set and 20% of the data into the test set.
+I first created a new data frame with a ***revenue*** column which is a product of the ***Rent*** and ***leasing_rate***/100 variables. Since ***leasing_rate*** is a percentage, I divided it by 100 to only get the factor effect. I also removed ***Rent*** and ***leasing_rate*** from the new data frame to prevent multicollinearity and eliminate the need to remove these two variables from the models specified below. As a final pre-processing step, I excluded any missing values in the dataset and split 80% of the data into the training set and 20% of the data into the test set. 
+Note: I did not scale the data since the modeling approaches I will be pursuing do not involve distances, hence they are not sensitive to the variance in the data.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 
@@ -302,7 +319,7 @@ partialPlot(green_random_forest_fit, green, "LEED", las=1)
 partialPlot(green_random_forest_fit, green, "Energystar", las=1)
 ```
 
-#### Conclusion
+## Conclusion
 
 The pdp for LEED shows that when LEED = 0, the predicted revenue per square foot per calendar year is slightly over 24 and when LEED = 1, the predicted revenue per square foot per calendar year is approximately 26. Likewise, the pdp for Energystar shows that when Energystar = 0, the revenue per square foot per calendar year is slightly above 24.05 and when Energystar = 1, the revenue per square foot per calendar year is approximately 24.4. 
 
@@ -310,15 +327,16 @@ These plots reflect that although the revenue predictions for buildings with gre
 
 Hence, it can be concluded that energy certifications do not influence building revenue per square foot per calendar year very significantly. 
 
-## Problem 4:Predictive model building: California housing
+# Problem 4:Predictive model building: California housing
 
-### Goal
+## Goal
 
 The goal is to build the best predictive model for median house values in California.
 
 ## Data Pre-processing
 
 I created a new data frame with standardized versions of ***totalRooms*** and ***totalBedrooms*** obtained by dividing the two variables by the ***households*** variable to get averages instead of totals. Additionally, I removed ***totalRooms*** and ***totalBedrooms*** from the new data frame to avoid multicollinearity and save writing in model specification. Lastly, I excluded any missing values and split 80% of the data into the training set and 20% of the data into the test set. 
+Note: I did not scale the data since the modeling approaches I will be pursuing do not involve distances, hence they are not sensitive to the variance in the data.
 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
@@ -344,6 +362,8 @@ ca_housing_test = testing(ca_housing_split)
   
 
 ```
+
+## Modeling Approach
 
 ### Linear Model (Baseline)
 
@@ -385,10 +405,13 @@ ca_housing_random_forest_fit = randomForest(medianHouseValue ~ .,
 # calculate rmse of the model on the test set
 rmse(ca_housing_random_forest_fit, ca_housing_test)
 ```
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+vi1 = varImpPlot(ca_housing_random_forest_fit, type=1)
+```
 
 ### Gradient-Boosted Trees (Model of Choice)
 
-I used all of the features in the training set and assumed a Gaussian distibution for the gradient boosted model with 10-fold cross-validation. The parameters for this model are as follows:  interaction.depth = 4, n.trees = 3000, shrinkage = .05. I ended up choosing such a high number of trees becuase the loss function kept showing the n-th tree as the mean-squared-error minimizer until I chose 3,000 and received a 2,900+ number as the mean-squared-error minimizer. The number of trees that minimized the mean-squared-error and a plot of the loss function is displayed below.
+I used all of the features in the training set and assumed a Gaussian distibution for the gradient boosted model with 10-fold cross-validation. The parameters for this model are as follows:  interaction.depth = 4, n.trees = 3000, shrinkage = .05. I ended up choosing such a high number of trees becuase the loss function kept showing the n-th tree as the mean-squared-error minimizer until I chose 3,000 and received a 2,900+ number as the mean-squared-error minimizer. The number of trees that minimized the mean-squared-error and a plot of the loss function is displayed below. Additionally, I manually cross-validated the interaction depth and shrinkage based on the lowest RMSE measure and arrived at the chosen parameters. 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 
@@ -419,6 +442,10 @@ RMSE(ca_yhat_test_gbm , ca_housing_test$medianHouseValue)
 
 ## Map Plots
 
+### Actual Median House Values
+
+The distribution of the actual median house values is shown below on the California map. The values increase from green to red on the color scale. 
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 
 # plot the original data, using a color scale to show medianHouseValue versus longitude (x) and latitude (y).
@@ -441,6 +468,10 @@ data_map <- base_map +
 data_map
 ```
 
+### Predicted Median House Values
+
+The distribution of the gbm predicted median house values is shown below on the California map. The values increase from green to red on the color scale. The color distribution is quite similiar to that of the actual values, with the exception of high values. It seems that my model did not predict the high values as high as they should have been since mostly orange data points are observed in place of red ones. 
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 
 pred_ca_housing <- ca_housing %>%
@@ -456,6 +487,11 @@ pred_map <- base_map +
 pred_map
 
 ```
+
+### Residuals
+
+The distribution of the residuals from the gbm model is shown below on the California map. The resisduals were calculated as differenced between predicted median house values and actual median house values. Blue-ish points represent negative differences, green points represent minimal to no differences, and red-ish points represent positive differences. It can be seen that most of the data points are in the green range, which reflects the success of the gbm model in predicting median house values. 
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 
 pred_ca_housing <- pred_ca_housing %>%
