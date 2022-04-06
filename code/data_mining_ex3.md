@@ -152,15 +152,17 @@ distribution and then built another model assuming Poisson distribution.
 
     ## [1] 66
 
+The number of trees that minimizes the squared error loss in this
+run of the model is displayed above.
+
 The figure above displays a loss function as a result of n trees added
-to the ensemble for the chosen gradient boosted machine (gbm) model .
+to the ensemble for the chosen gradient boosted machine (gbm) model.
 The model assumes Gaussian distibution with 500 trees. The squared error
 loss is shown on the y-axis and numbers of trees is on the x-axis. It
 can be seen that the cross-validated errors represented by the green
 line are minimized between 40 to 90 trees. Therefore, the ideal number
 of trees to minimize error while accounting for overfitting would be
-100. The number of trees that minimizes the squared error loss in this
-run of the model is also displayed above.
+100. 
 
 The RMSE between the predicted total number cases of dengue from the
 chosen gbm model and the actual total number of cases of dengue from the
@@ -194,8 +196,9 @@ the week. This is a raw measure of humidity based purely on how much
 water is in the air.
 
 It can be seen from the plot below that as the average specific humidity
-rises, the predicted number of dengue cases also rises until it flatten
-outs as the average specific humidity approaches 19 grams of water per
+rises beyond 15 grams of water per
+kilogram of air for the week, the predicted number of dengue cases also rises until it flattens
+out as the average specific humidity approaches 19 grams of water per
 kilogram of air for the week.
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-8-1.png)
@@ -208,7 +211,7 @@ It can be seen from the plot below that the relationship between
 predicted dengue cases and precipitation is quite volatile until
 precipitation reaches 100 millimeters. Beyond 100 millimeters of
 precipitation, there seems to be a positive relationship between dengue
-cases and precipitation until it becomes levels off beyond 290
+cases and precipitation until dengue cases begin to level off beyond 250
 millimeters of precipitation.
 
 ![](data_mining_ex3_files/figure-markdown_strict/unnamed-chunk-9-1.png)
@@ -247,7 +250,9 @@ the new data frame to prevent multicollinearity and eliminate the need
 to remove these two variables from the models specified below. As a
 final pre-processing step, I excluded any missing values in the dataset
 and split 80% of the data into the training set and 20% of the data into
-the test set. Note: I did not scale the data since the modeling
+the test set. 
+
+***Note***: I did not scale the data since the modeling
 approaches I will be pursuing do not involve distances, hence they are
 not sensitive to the variance in the data.
 
@@ -342,7 +347,8 @@ totals. Additionally, I removed ***totalRooms*** and ***totalBedrooms***
 from the new data frame to avoid multicollinearity and save writing in
 model specification. Lastly, I excluded any missing values and split 80%
 of the data into the training set and 20% of the data into the test set.
-Note: I did not scale the data since the modeling approaches I will be
+
+***Note***: I did not scale the data since the modeling approaches I will be
 pursuing do not involve distances, hence they are not sensitive to the
 variance in the data.
 
